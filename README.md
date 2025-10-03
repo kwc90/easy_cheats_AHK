@@ -9,7 +9,7 @@ Gross little AutoHotkey v2 helper that fires in-game console commands with a qui
    
 ---
 
->This ahk script is a workaround to the fact that you cannot bind console cheats to key in EFPSCE.
+>This ahk script is a workaround to the fact that you cannot bind console cheats to key in EFPSCE (that I'm aware of)
 >
 >Clark does amazing work and honestly I wouldn't expect him to add this feature at all,
 >I hope this hacky tool will be useful enough that he doesn't have to bother. :)
