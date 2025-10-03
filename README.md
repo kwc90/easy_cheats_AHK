@@ -34,7 +34,7 @@ Gross little AutoHotkey v2 helper that fires in-game console commands with a qui
 1. Install **AutoHotkey v2**.
 2. Put `cheat_hotkeys.ahk` and `cheat_macros.ini` in the **same folder**.
 3. Double-click `cheat_hotkeys.ahk` (tray icon appears).
-4. In your game/app: **hold `**, **hold Alt**, **tap a trigger key**.
+4. In the game: **hold `**, **hold Alt**, **tap a trigger key**.
 
 **Quick controls**
 - Reload macros (re-read INI): **Ctrl+Alt+L** (off by default)
