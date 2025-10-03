@@ -56,7 +56,7 @@ Enabled=1              ; 1 = on, 0 = off
 
 You can add more of these, change their trigger key, enable or disable them.
 
-> After edits, press **Ctrl+Alt+L** to reload.
+> After edits, go to the system tray and reload the script, or use the optional hotkey.
 
 **Valid `TRIGGER_KEY` values**
 
