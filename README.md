@@ -22,7 +22,7 @@ Gross little AutoHotkey v2 helper that fires in-game console commands with a qui
 
 ## Files
 
-- **`Easy_Cheats.ahk`** – main script (logic, timing, Enter behavior, optional app limit).
+- **`Easy_Cheats.ahk`** – main script (logic, some tunable params)
 - **`cheat_macros.ini`** – user-editable macros (keys → text).
 
 > Requires **AutoHotkey v2** (not v1).
