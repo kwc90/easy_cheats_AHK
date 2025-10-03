@@ -63,7 +63,6 @@ You can add more of these, change their trigger key, enable or disable them.
 - Letters: `a`..`z` (case-insensitive; script normalizes to lowercase)  
 - Function keys: `F1`..`F12`  
 - Special: `Space`  
-- Scan codes: `SC###` (e.g., `SC031`) for layout-agnostic bindings
 
 ---
 
@@ -98,13 +97,13 @@ BETWEEN_KEYS      := 1
    - Haven't figured this one out yet myself, although I find if you do the ~ + alt chord and then just tap your trigger key and release them all, it's more consistent.
 
 4) **Single-key triggers only**  
-   - Capture listens for one key (letters, F-keys, Space, SC codes).
+   - Capture listens for one key (letters, F-keys, Space).
 
 5) **Duplicate triggers**  
    - If two sections share the same `TRIGGER_KEY`, only one wins. Make them unique.
 
 6) **Special characters in `COMMAND_STRING`**  
-   - Escape braces as `{{}` and `{}}`.  
+   - Unfortunately can't figure this out. if you're trying to send a console one-liner, you'll need to pres ; and press space before sending the command, no ; ( ) /= etc in the COMMAND_STRING. :(
 
 
 ---
