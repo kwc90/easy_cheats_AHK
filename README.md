@@ -5,7 +5,7 @@ Gross little AutoHotkey v2 helper that fires in-game console commands with a qui
 **Gesture:** 
 1. Hold **~** + **Alt**
 2. Tap a **hotkey** (like g for godmode)
-   Now it will type godmode in the console and enter (you can turn this off if you want)
+   * Now it will type godmode in the console and hit enter for you! (you can turn this off if you want)
    
 ---
 
