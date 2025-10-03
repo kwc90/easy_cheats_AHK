@@ -1,6 +1,6 @@
 # Easy Cheats (AHK v2)
 
-Gross little LLM-coded AutoHotkey v2 helper that fires in-game console commands with a quick gesture to EFPSE.  
+Gross little LLM-generated AutoHotkey v2 helper that fires in-game console commands with a quick gesture to EFPSE.  
 
 **Gesture:** 
 1. Hold **~** + **Alt**
