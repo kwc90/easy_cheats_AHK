@@ -1,5 +1,5 @@
-﻿#Requires AutoHotkey v2.0
-; === Hold ` (SC029), then hold Alt, then tap your macro's TRIGGER_KEY (from macros.ini) ===
+#Requires AutoHotkey v2.0
+; === Hold ` (SC029), then hold Alt, then tap a trigger key from cheat_macros.ini => sends its COMMAND_STRING ===
 ; Backtick types normally; only the combo-time trigger key press is swallowed.
 
 ; ---------------- Master settings (stay here) ----------------
@@ -7,55 +7,95 @@ SEND_ENTER_AT_END := true          ; hit Enter after command
 LIMIT_TO_EXE := "Game.exe"            ; e.g. "Game.exe" or "" for any window
 
 ; Timing (ms)
-PRE_RELEASE_DELAY := 0
-DOWN_DELAY := 0
-UP_DELAY := 0
-BETWEEN_KEYS := 0
+PRE_RELEASE_DELAY := 1
+DOWN_DELAY := 1
+UP_DELAY := 1
+BETWEEN_KEYS := 1
 
-; ---------------- Multi-macro INI ----------------
-; Example macros.ini:
-;   [noclip]
-;   TRIGGER_KEY=n
-;   COMMAND_STRING=noclip
-;   Enabled=1
-;
-;   [god]
-;   TRIGGER_KEY=g
-;   COMMAND_STRING=god
-;   Enabled=1
+; ---------------- Paths ----------------
 INI_PATH := A_ScriptDir "\cheat_macros.ini"
 
-; Data
+; ---------------- Data ----------------
 macros := []        ; [{name, key, cmd, enabled}]
-triggerToIdx := Map()     ; "g" -> 1, "F8" -> 2, "SC031" -> 3
+triggerToIdx := Map()     ; "g" -> index, "F8" -> index, "SC031" -> index
+
+; Settings persisted to INI->[settings]
+ENABLE_RELOAD_HK := 0   ; Ctrl+Alt+L
+ENABLE_FULLRELOAD_HK := 0   ; Ctrl+Alt+R
 
 ; Combo state
 tickHeld := false   ; physical ` down
 altSeenAfterTick := false   ; Alt pressed after `
-isCapturing := false   ; currently listening for trigger?
+isCapturing := false   ; listening for trigger?
 
 ; ---------------- Startup ----------------
+LoadSettings()
 LoadAllMacros()
 BuildTriggerMap()
+ApplyManagementHotkeys()
 BuildTrayMenu()
+ShowLoadedToast()  ; <— toast confirms macros loaded
 
-; Quick helpers
-^!l:: ReloadEverything()
-^!r:: Reload()
-
-ReloadEverything() {
+; ---------------- Management hotkeys (registered dynamically) ----------------
+ReloadEverything(*) {
     global
     LoadAllMacros()
     BuildTriggerMap()
     BuildTrayMenu()
-    TrayTip("Macros", "Reloaded from macros.ini (" macros.Length " macro(s)).", 1500)
+    ShowLoadedToast()  ; <— toast on reload too
+}
+FullReload(*) {
+    Reload()
 }
 
+ApplyManagementHotkeys() {
+    global ENABLE_RELOAD_HK, ENABLE_FULLRELOAD_HK
+    ; Turn both off first (in case names already registered)
+    try Hotkey("^!l", "Off")
+    try Hotkey("^!r", "Off")
+
+    if ENABLE_RELOAD_HK {
+        try Hotkey("^!l", "ReloadEverything", "On")
+    }
+    if ENABLE_FULLRELOAD_HK {
+        try Hotkey("^!r", "FullReload", "On")
+    }
+}
+
+; ---------------- Tray menu ----------------
 BuildTrayMenu() {
-    global macros
+    global macros, ENABLE_RELOAD_HK, ENABLE_FULLRELOAD_HK
+
     A_TrayMenu.Delete()
     A_TrayMenu.Add("Reload Macros (Ctrl+Alt+L)", (*) => ReloadEverything())
-    A_TrayMenu.Add("Full Reload (Ctrl+Alt+R)", (*) => Reload())
+    if !ENABLE_RELOAD_HK {
+        A_TrayMenu.Add("— Reload hotkey disabled —", (*) => 0)
+        A_TrayMenu.Disable("— Reload hotkey disabled —")
+    }
+    A_TrayMenu.Add("Full Reload (Ctrl+Alt+R)", (*) => FullReload())
+    if !ENABLE_FULLRELOAD_HK {
+        A_TrayMenu.Add("— Full reload hotkey disabled —", (*) => 0)
+        A_TrayMenu.Disable("— Full reload hotkey disabled —")
+    }
+    A_TrayMenu.Add() ; separator
+
+    ; Options submenu (checkable)
+    opts := Menu()
+    item1 := "Enable Reload Hotkey (Ctrl+Alt+L)"
+    item2 := "Enable Full Reload Hotkey (Ctrl+Alt+R)"
+    opts.Add(item1, ToggleReloadHotkey)
+    opts.Add(item2, ToggleFullReloadHotkey)
+    if ENABLE_RELOAD_HK
+        opts.Check(item1)
+    else
+        opts.Uncheck(item1)
+    if ENABLE_FULLRELOAD_HK
+        opts.Check(item2)
+    else
+        opts.Uncheck(item2)
+    A_TrayMenu.Add("Options", opts)
+
+    ; Active macros (read-only)
     A_TrayMenu.Add()
     if (macros.Length) {
         header := "Active Macros:"
@@ -68,6 +108,28 @@ BuildTrayMenu() {
         none := "(no macros found)"
         A_TrayMenu.Add(none, (*) => 0), A_TrayMenu.Disable(none)
     }
+
+    ; Exit
+    A_TrayMenu.Add()
+    A_TrayMenu.Add("Exit Cheat Hotkeys", (*) => ExitApp())
+}
+
+ToggleReloadHotkey(*) {
+    global ENABLE_RELOAD_HK
+    ENABLE_RELOAD_HK := !ENABLE_RELOAD_HK
+    SaveSettings()
+    ApplyManagementHotkeys()
+    BuildTrayMenu()
+    ShowLoadedToast()
+}
+
+ToggleFullReloadHotkey(*) {
+    global ENABLE_FULLRELOAD_HK
+    ENABLE_FULLRELOAD_HK := !ENABLE_FULLRELOAD_HK
+    SaveSettings()
+    ApplyManagementHotkeys()
+    BuildTrayMenu()
+    ShowLoadedToast()
 }
 
 ; ---------------- Backtick passthrough & Alt tracking ----------------
@@ -109,7 +171,7 @@ CaptureTriggerKey() {
     if !ComboActive()
         return
 
-    ; Optional: enforce active EXE before we even listen
+    ; Enforce active EXE before we even listen (optional)
     if (LIMIT_TO_EXE != "" && !WinActive("ahk_exe " LIMIT_TO_EXE))
         return
 
@@ -121,11 +183,15 @@ CaptureTriggerKey() {
         k := NormalizeKey(m.key)
         if (k = "")
             continue
-        ih.KeyOpt(IHKeyName(k), "ES")   ; mark as EndKey
+        ; ES = End + Suppress so the trigger key itself doesn't leak
+        ih.KeyOpt(IHKeyName(k), "ES")
     }
+    ; Optional: allow Esc to cancel capture (no macro fired)
+    ih.KeyOpt("Escape", "E")
 
     ih.Start()
-    ih.Wait()          ; wait for one key or timeout
+    ih.Wait()                  ; wait for one key or timeout
+
     altSeenAfterTick := false  ; require re-entering the sequence next time
 
     if (ih.EndReason != "EndKey")
@@ -198,16 +264,62 @@ SendCommand(cmd, downDelay := 5, upDelay := 5, between := 5) {
     }
 }
 
-; ---------------- INI parsing ----------------
+; ---------------- Toast helpers ----------------
+CountEnabledMacros() {
+    global macros
+    c := 0
+    for m in macros
+        if m.enabled
+            c++
+    return c
+}
+
+ShowLoadedToast() {
+    global macros
+    total := macros.Length
+    enabled := CountEnabledMacros()
+    ; Build a short preview: up to 4 enabled macros as "key -> name"
+    preview := ""
+    shown := 0
+    for m in macros {
+        if !m.enabled
+            continue
+        preview .= (preview ? "`n" : "") m.key " → " m.name
+        shown++
+        if (shown >= 4)
+            break
+    }
+    msg := "Loaded " enabled " of " total " macro(s)."
+    TrayTip("Easy Cheats", msg, 1800)
+}
+
+; ---------------- INI: settings + macros ----------------
+LoadSettings() {
+    global INI_PATH, ENABLE_RELOAD_HK, ENABLE_FULLRELOAD_HK
+    if !FileExist(INI_PATH) {
+        return
+    }
+    ENABLE_RELOAD_HK := IniRead(INI_PATH, "settings", "EnableReloadHotkey", "1") = "1"
+    ENABLE_FULLRELOAD_HK := IniRead(INI_PATH, "settings", "EnableFullReloadHotkey", "1") = "1"
+}
+
+SaveSettings() {
+    global INI_PATH, ENABLE_RELOAD_HK, ENABLE_FULLRELOAD_HK
+    IniWrite(ENABLE_RELOAD_HK ? "1" : "0", INI_PATH, "settings", "EnableReloadHotkey")
+    IniWrite(ENABLE_FULLRELOAD_HK ? "1" : "0", INI_PATH, "settings", "EnableFullReloadHotkey")
+}
+
 LoadAllMacros() {
     global INI_PATH, macros
     macros := []
     if !FileExist(INI_PATH) {
-        TrayTip("Macros", "No macros.ini found beside script.", 2500)
+        TrayTip("Cheat Hotkeys", "No cheat_macros.ini found beside script.", 2500)
         return
     }
     sections := GetIniSections(INI_PATH)
     for name in sections {
+        if (StrLower(name) = "settings")
+            continue
         key := Trim(IniRead(INI_PATH, name, "TRIGGER_KEY", ""))
         cmd := IniRead(INI_PATH, name, "COMMAND_STRING", "")
         en := Trim(IniRead(INI_PATH, name, "Enabled", "1"))
@@ -242,8 +354,6 @@ BuildTriggerMap() {
 }
 
 ; ---------------- Key normalization helpers ----------------
-; Normalize to: single letters => lowercase ("g"), Space => "Space",
-; F-keys => "F8", scan codes => "SC031". Case-insensitive overall.
 NormalizeKey(k) {
     k := Trim(k)
     if (k = "")
@@ -259,7 +369,6 @@ NormalizeKey(k) {
     return k
 }
 
-; InputHook.EndKey sometimes returns vk/sc forms; fold them back
 CanonicalizeEndKey(k) {
     k := Trim(k)
     if (k = "")
@@ -271,8 +380,7 @@ CanonicalizeEndKey(k) {
     return k
 }
 
-; InputHook.KeyOpt wants a key name; accept our normalized set.
 IHKeyName(k) {
-    ; It already accepts "g", "Space", "F8", "SC031" (case-insensitive)
+    ; Accept "g", "Space", "F8", "SC031"
     return k
 }
