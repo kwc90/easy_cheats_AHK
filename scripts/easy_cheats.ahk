@@ -77,6 +77,11 @@ BuildTrayMenu() {
         A_TrayMenu.Add("— Full reload hotkey disabled —", (*) => 0)
         A_TrayMenu.Disable("— Full reload hotkey disabled —")
     }
+
+    ; New: open the INI in Notepad
+    A_TrayMenu.Add()
+    A_TrayMenu.Add("Open cheat_macros.ini", (*) => OpenIniInNotepad())
+
     A_TrayMenu.Add() ; separator
 
     ; Options submenu (checkable)
@@ -112,6 +117,32 @@ BuildTrayMenu() {
     ; Exit
     A_TrayMenu.Add()
     A_TrayMenu.Add("Exit Cheat Hotkeys", (*) => ExitApp())
+}
+
+; --- New helpers for INI editing ---
+EnsureIniExists() {
+    global INI_PATH
+    if !FileExist(INI_PATH) {
+        template :=
+            (
+                "[settings]`r`n"
+                "EnableReloadHotkey=1`r`n"
+                "EnableFullReloadHotkey=1`r`n"
+                "`r`n"
+                "; Example macro section:`r`n"
+                "; [noclip]`r`n"
+                "; TRIGGER_KEY=n`r`n"
+                "; COMMAND_STRING=noclip`r`n"
+                "; Enabled=1`r`n"
+            )
+        FileAppend(template, INI_PATH, "UTF-8")
+    }
+}
+
+OpenIniInNotepad(*) {
+    global INI_PATH
+    EnsureIniExists()
+    try Run('notepad.exe "' INI_PATH '"')
 }
 
 ToggleReloadHotkey(*) {
