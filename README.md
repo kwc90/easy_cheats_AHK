@@ -1,6 +1,7 @@
 # Easy Cheats (AHK v2)
 
-Tiny AutoHotkey v2 helper that fires in-game console commands with a quick gesture to EFPSE.  
+Gross little AutoHotkey v2 helper that fires in-game console commands with a quick gesture to EFPSE.  
+
 **Gesture:** 
 1. hold **~** + **Alt**
 2. Tap a **hotkey** (like g for godmode)
