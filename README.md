@@ -3,7 +3,7 @@
 Gross little AutoHotkey v2 helper that fires in-game console commands with a quick gesture to EFPSE.  
 
 **Gesture:** 
-1. hold **~** + **Alt**
+1. Hold **~** + **Alt**
 2. Tap a **hotkey** (like g for godmode)
    Now it will type godmode in the console and enter (you can turn this off if you want)
    
